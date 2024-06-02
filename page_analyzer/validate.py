@@ -1,5 +1,6 @@
 import validators
 
+
 def validate_url(url):
     errors = []
     if len(url) > 255:

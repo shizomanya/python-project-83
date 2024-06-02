@@ -27,9 +27,8 @@ def get_content_of_page(page_data):
     soup = bs4.BeautifulSoup(page_data, 'html.parser')
     h1 = soup.find('h1').get_text() if soup.find('h1') else ''
     title = soup.find('title').get_text() if soup.find('title') else ''
-    meta = soup.find(
-        'meta', {"name": "description"}).attrs['content'] if soup.find(
-        'meta', {"name": "description"}) else ''
+    meta_tag = soup.find('meta', {"name": "description"})
+    meta = meta_tag.attrs['content'] if meta_tag else ''
     return h1, title, meta
 
 
@@ -52,7 +51,9 @@ def post_url():
     parsed_url = urlparse(url)
     valid_url = parsed_url.scheme + '://' + parsed_url.netloc
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(
+            cursor_factory=psycopg2.extras.NamedTupleCursor
+        ) as cur:
             cur.execute("""
                 SELECT id FROM urls
                 WHERE name = %s""", [valid_url])
@@ -86,7 +87,9 @@ def url_added(id):
             url_created_at = row.created_at if row else None
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(
+            cursor_factory=psycopg2.extras.NamedTupleCursor
+        ) as cur:
             cur.execute("""
                 SELECT id, created_at, status_code, h1, title, description
                 FROM url_checks
@@ -105,14 +108,21 @@ def url_added(id):
 @app.get('/urls')
 def urls_get():
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(
+            cursor_factory=psycopg2.extras.NamedTupleCursor
+        ) as cur:
             cur.execute("""
                 SELECT
-                DISTINCT ON (urls.id) urls.id, urls.name, MAX(url_checks.created_at), url_checks.status_code
+                    DISTINCT ON (urls.id)
+                        urls.id,
+                        urls.name,
+                        MAX(url_checks.created_at),
+                        url_checks.status_code
                 FROM urls
                 LEFT JOIN url_checks ON urls.id = url_checks.url_id
                 GROUP BY urls.id, url_checks.status_code
-                ORDER BY urls.id DESC""")
+                ORDER BY urls.id DESC
+            """)
             rows = cur.fetchall()
     return render_template(
         'urls.html',
@@ -123,7 +133,9 @@ def urls_get():
 @app.route('/urls/<id>/checks', methods=['POST'])
 def id_check(id):
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(
+            cursor_factory=psycopg2.extras.NamedTupleCursor
+        ) as cur:
             cur.execute("""
                 SELECT name
                 FROM urls
@@ -144,7 +156,8 @@ def id_check(id):
         with conn.cursor() as cur:
             date = datetime.date.today()
             cur.execute("""
-                INSERT INTO url_checks (url_id, created_at, status_code, h1, title, description)
+                INSERT INTO url_checks
+                (url_id, created_at, status_code, h1, title, description)
                 VALUES (%s, %s, %s, %s, %s, %s)""", [
                 id, date, status_code, h1, title, meta])
             conn.commit()
