@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1>Websites</h1>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Last Check</th>
+                    <th>Status Code</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for url in checks %}
+                <tr>
+                    <td>{{ url.id }}</td>
+                    <td>
+                        <a href="{{ url_for('url_added', id=url.id) }}">
+                            {{ url.name }}
+                        </a>
+                    </td>
+                    <td>{{ url.max.strftime('%Y-%m-%d %H:%M:%S') if url.max else '' }}</td>
+                    <td>{{ url.status_code or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

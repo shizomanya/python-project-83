@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    {% if not url_name %}
+        <div class="alert alert-danger" role="alert">
+            Error: URL not found
+        </div>
+    {% else %}
+        <h1>Website: {{ url_name }}</h1>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover mt-3">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Status Code</th>
+                        <th>h1</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Creation Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for check in checks %}
+                    <tr>
+                        <td>{{ check.id }}</td>
+                        <td>{{ check.status_code }}</td>
+                        <td>{{ check.h1 }}</td>
+                        <td>{{ check.title }}</td>
+                        <td>{{ check.description }}</td>
+                        <td>{{ check.created_at.date() }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="mt-5 mb-3">Checks</h2>
+        <form method="post" action="{{ url_for('id_check', id=url_id) }}">
+            <input type="submit" class="btn btn-primary" value="Run Check">
+        </form>
+    {% endif %}
+</div>
+
+{% endblock %}
