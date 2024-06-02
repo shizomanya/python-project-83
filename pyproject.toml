@@ -6,8 +6,11 @@ authors = ["shizomanya <mistic_aa@inbox.ru>"]
 readme = "README.md"
 repository = "https://github.com/shizomanya/python-project-lvl3.git"
 classifiers = [
-    "Topic :: Software Development :: Build Tools",
-    "Topic :: Software Development :: Libraries :: Python Modules"
+    "Development Status :: 3 - Alpha",
+    "Environment :: Web Environment",
+    "Framework :: Flask",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application"
 ]
 packages = [
   { include = "page_analyzer" },
