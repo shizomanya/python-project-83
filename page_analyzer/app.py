@@ -163,4 +163,3 @@ def id_check(id):
             conn.commit()
     flash("Page successfully checked", "alert alert-success")
     return redirect(url_for('url_added', id=id))
-
