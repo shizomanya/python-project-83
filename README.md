@@ -1,6 +1,10 @@
 ### Hexlet tests and linter status:
 [![Actions Status](https://github.com/shizomanya/python-project-83/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/shizomanya/python-project-83/actions)
 
+[![Python CI](https://github.com/shizomanya/python-project-lvl3/actions/workflows/ci.yml/badge.svg)](https://github.com/shizomanya/python-project-lvl3/actions/workflows/ci.yml)
+
+<a href="https://codeclimate.com/github/shizomanya/python-project-lvl3/maintainability"><img src="https://api.codeclimate.com/v1/badges/fc423b38c73510c221a2/maintainability" /></a>
+
 # PAGE ANALYZER
 ### Description:
 Page Analyzer is a web application that checks web pages for SEO suitability. 
