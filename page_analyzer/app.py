@@ -151,7 +151,10 @@ def id_check(id):
             browser.close()
         flash("Check completed successfully", "alert alert-success")
     except Exception as e:
-        flash(f"An error occurred during the check: {str(e)}", "alert alert-danger")
+        flash(
+            f"An error occurred during the check: {str(e)}",
+            "alert alert-danger"
+        )
 
     return redirect(url_for('url_added', id=id))
 
