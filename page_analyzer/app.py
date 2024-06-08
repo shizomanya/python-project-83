@@ -9,8 +9,12 @@ from dotenv import load_dotenv
 from urllib.parse import urlparse
 from requests.exceptions import HTTPError, ConnectionError
 from playwright.sync_api import sync_playwright
+import logging
 
 load_dotenv()
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
@@ -60,6 +64,7 @@ def post_url():
             flash("Empty response from the URL", "alert alert-danger")
             return redirect(url_for('index'))
     except (HTTPError, ConnectionError) as e:
+        logging.error(f"Error accessing URL {valid_url}: {e}")
         flash("Invalid URL or website is unreachable", "alert alert-danger")
         return redirect(url_for('index'))
 
@@ -151,11 +156,12 @@ def id_check(id):
             page.goto(url_name)
             page.wait_for_load_state('networkidle')
             # Ожидание перед попыткой взаимодействия с элементами
-            page.wait_for_selector('input[type="submit"]', timeout=5000)
+            page.wait_for_selector('input[type="submit"]')
             page.screenshot(path=f'{id}.png')
             browser.close()
         flash("Check completed successfully", "alert alert-success")
     except Exception as e:
+        logging.error(f"An error occurred during the check: {e}")
         flash(
             f"An error occurred during the check: {str(e)}",
             "alert alert-danger"
