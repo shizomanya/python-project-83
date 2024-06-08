@@ -147,6 +147,8 @@ def id_check(id):
             page = browser.new_page()
             page.goto(url_name)
             page.wait_for_load_state('networkidle')
+            # Ожидание перед попыткой взаимодействия с элементами
+            page.wait_for_selector('input[type="submit"]')
             page.screenshot(path=f'{id}.png')
             browser.close()
         flash("Check completed successfully", "alert alert-success")
