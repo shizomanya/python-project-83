@@ -56,7 +56,10 @@ def post_url():
     try:
         response = requests.get(valid_url)
         response.raise_for_status()
-    except (HTTPError, ConnectionError):
+        if not response.text:
+            flash("Empty response from the URL", "alert alert-danger")
+            return redirect(url_for('index'))
+    except (HTTPError, ConnectionError) as e:
         flash("Invalid URL or website is unreachable", "alert alert-danger")
         return redirect(url_for('index'))
 
@@ -148,7 +151,7 @@ def id_check(id):
             page.goto(url_name)
             page.wait_for_load_state('networkidle')
             # Ожидание перед попыткой взаимодействия с элементами
-            page.wait_for_selector('input[type="submit"]')
+            page.wait_for_selector('input[type="submit"]', timeout=5000)
             page.screenshot(path=f'{id}.png')
             browser.close()
         flash("Check completed successfully", "alert alert-success")
