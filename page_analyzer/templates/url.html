@@ -9,9 +9,33 @@
         </div>
     {% else %}
         <h1>Website: {{ url_name }}</h1>
+        
+        <div class="table-responsive mt-3">
+            <table class="table table-bordered table-hover" data-test="url">
+                <tbody>
+                    <tr>
+                        <td>ID</td>
+                        <td>{{ url_id }}</td>
+                    </tr>
+                    <tr>
+                        <td>Name</td>
+                        <td>{{ url_name }}</td>
+                    </tr>
+                    <tr>
+                        <td>Creation Date</td>
+                        <td>{{ url_created_at }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover mt-3">
+        <h2 class="mt-5 mb-3">Checks</h2>
+        <form method="post" action="{{ url_for('id_check', id=url_id) }}">
+            <input type="submit" class="btn btn-primary" value="Run Check">
+        </form>
+        
+        <div class="table-responsive mt-3">
+            <table class="table table-bordered table-hover" data-test="checks">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -36,12 +60,6 @@
                 </tbody>
             </table>
         </div>
-
-        <h2 class="mt-5 mb-3">Checks</h2>
-        <form method="post" action="{{ url_for('id_check', id=url_id) }}">
-            <input type="submit" class="btn btn-primary" value="Run Check">
-        </form>
     {% endif %}
 </div>
-
 {% endblock %}
