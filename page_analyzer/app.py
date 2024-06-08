@@ -7,7 +7,7 @@ import datetime
 from flask import Flask, request, url_for, flash, redirect, render_template
 from dotenv import load_dotenv
 from urllib.parse import urlparse
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, ConnectionError
 
 
 load_dotenv()
@@ -40,6 +40,8 @@ def post_url():
     url = request.form.get('url')
     parsed_url = urlparse(url)
     valid_url = parsed_url.scheme + '://' + parsed_url.netloc
+
+    # Проверка наличия URL в базе данных
     with get_connection() as conn:
         with conn.cursor(
             cursor_factory=psycopg2.extras.NamedTupleCursor
@@ -49,6 +51,14 @@ def post_url():
             if result:
                 flash("Page already exists", "alert alert-info")
                 return redirect(url_for('url_added', id=result.id))
+
+    # Проверка валидности URL
+    try:
+        response = requests.get(valid_url)
+        response.raise_for_status()
+    except (HTTPError, ConnectionError):
+        flash("Invalid URL or website is unreachable", "alert alert-danger")
+        return redirect(url_for('index'))
 
     with get_connection() as conn:
         with conn.cursor() as cur:
@@ -134,5 +144,17 @@ def id_check(id):
     try:
         response = requests.get(url_name)
         response.raise_for_status()
-    except (ConnectionError, HTTPError):
+    except (HTTPError, ConnectionError):
         flash("An error occurred during the check", "alert alert-danger")
+
+    return redirect(url_for('url_added', id=id))
+
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('500.html'), 500
