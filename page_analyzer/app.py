@@ -7,6 +7,8 @@ import datetime
 from flask import Flask, request, url_for, flash, redirect, render_template
 from dotenv import load_dotenv
 from urllib.parse import urlparse
+from requests.exceptions import HTTPError
+
 
 load_dotenv()
 
@@ -39,7 +41,9 @@ def post_url():
     parsed_url = urlparse(url)
     valid_url = parsed_url.scheme + '://' + parsed_url.netloc
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(
+            cursor_factory=psycopg2.extras.NamedTupleCursor
+        ) as cur:
             cur.execute("SELECT id FROM urls WHERE name = %s", [valid_url])
             result = cur.fetchone()
             if result:
