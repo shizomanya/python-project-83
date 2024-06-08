@@ -8,7 +8,7 @@ from flask import Flask, request, url_for, flash, redirect, render_template
 from dotenv import load_dotenv
 from urllib.parse import urlparse
 from requests.exceptions import HTTPError, ConnectionError
-
+from playwright.sync_api import sync_playwright
 
 load_dotenv()
 
@@ -142,10 +142,16 @@ def id_check(id):
 
     url_name = result.name if result else None
     try:
-        response = requests.get(url_name)
-        response.raise_for_status()
-    except (HTTPError, ConnectionError):
-        flash("An error occurred during the check", "alert alert-danger")
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page()
+            page.goto(url_name)
+            page.wait_for_load_state('networkidle')
+            page.screenshot(path=f'{id}.png')
+            browser.close()
+        flash("Check completed successfully", "alert alert-success")
+    except Exception as e:
+        flash(f"An error occurred during the check: {str(e)}", "alert alert-danger")
 
     return redirect(url_for('url_added', id=id))
 
