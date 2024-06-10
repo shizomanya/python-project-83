@@ -6,10 +6,9 @@
     <h1 class="display-3">Page Analyzer</h1>
     <p class="lead">Free website SEO analysis tool</p>
     <form action="{{ url_for('post_url') }}" method="post" class="d-flex justify-content-center">
-      <input type="text" name="url" placeholder="https://www.example.com" value="{{ url_input }}" class="form-control form-control-lg" required>
+      <input type="text" name="url" placeholder="https://www.example.com" class="form-control form-control-lg" required>
       <button type="submit" class="btn btn-primary btn-lg ms-3 px-5 text-uppercase mx-3">Analyze</button>
     </form>
   </div>
 </div>
-
 {% endblock %}
