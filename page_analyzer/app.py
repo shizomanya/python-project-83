@@ -1,15 +1,20 @@
 import os
-import bs4
+import sys
+import datetime
+import logging
+import requests
 import psycopg2
 import psycopg2.extras
-import requests
-import datetime
-from flask import Flask, request, url_for, flash, redirect, render_template
+import bs4
+from flask import Flask, request, flash, redirect, render_template, url_for
 from dotenv import load_dotenv
-from urllib.parse import urlparse
 from requests.exceptions import HTTPError, ConnectionError
-from playwright.sync_api import sync_playwright
-import logging
+from page_analyzer.validate import validate_url
+from urllib.parse import urlparse
+
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+)
 
 load_dotenv()
 
@@ -43,7 +48,12 @@ def index():
 def post_url():
     url = request.form.get('url')
     parsed_url = urlparse(url)
-    valid_url = parsed_url.scheme + '://' + parsed_url.netloc
+    valid_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+
+    errors = validate_url(valid_url)
+    if errors:
+        flash("Invalid URL", "alert alert-danger")
+        return redirect(url_for('index'))
 
     # Проверка наличия URL в базе данных
     with get_connection() as conn:
@@ -71,23 +81,29 @@ def post_url():
     with get_connection() as conn:
         with conn.cursor() as cur:
             date = datetime.date.today()
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO urls (name, created_at)
-                VALUES (%s, %s) RETURNING id""", [valid_url, date])
+                VALUES (%s, %s) RETURNING id
+                """, [valid_url, date]
+            )
             url_id = cur.fetchone()[0]
             conn.commit()
         flash("Page successfully added", "alert alert-success")
         return redirect(url_for('url_added', id=url_id))
 
 
-@app.route('/urls/<id>')
+@app.route('/urls/<int:id>')
 def url_added(id):
     with get_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT name, created_at
                 FROM urls
-                WHERE id = %s""", [id])
+                WHERE id = %s
+                """, [id]
+            )
             row = cur.fetchone()
             url_name = row.name if row else None
             url_created_at = row.created_at if row else None
@@ -96,11 +112,14 @@ def url_added(id):
         with conn.cursor(
             cursor_factory=psycopg2.extras.NamedTupleCursor
         ) as cur:
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT id, created_at, status_code, h1, title, description
                 FROM url_checks
                 WHERE url_id = %s
-                ORDER BY id DESC""", [id])
+                ORDER BY id DESC
+                """, [id]
+            )
             rows = cur.fetchall()
     return render_template(
         'url.html',
@@ -117,48 +136,64 @@ def urls_get():
         with conn.cursor(
             cursor_factory=psycopg2.extras.NamedTupleCursor
         ) as cur:
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT
                     DISTINCT ON (urls.id)
                         urls.id,
                         urls.name,
-                        MAX(url_checks.created_at),
+                        MAX(url_checks.created_at) AS max,
                         url_checks.status_code
                 FROM urls
                 LEFT JOIN url_checks ON urls.id = url_checks.url_id
                 GROUP BY urls.id, url_checks.status_code
                 ORDER BY urls.id DESC
-            """)
+                """
+            )
             rows = cur.fetchall()
     return render_template(
         'urls.html',
-        checks=rows
+        urls=rows
     )
 
 
-@app.route('/urls/<id>/checks', methods=['POST'])
+@app.route('/urls/<int:id>/checks', methods=['POST'])
 def id_check(id):
     with get_connection() as conn:
         with conn.cursor(
             cursor_factory=psycopg2.extras.NamedTupleCursor
         ) as cur:
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT name
                 FROM urls
-                WHERE id = %s""", [id])
+                WHERE id = %s
+                """, [id]
+            )
             result = cur.fetchone()
 
     url_name = result.name if result else None
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
-            page = browser.new_page()
-            page.goto(url_name)
-            page.wait_for_load_state('networkidle')
-            # Ожидание перед попыткой взаимодействия с элементами
-            page.wait_for_selector('input[type="submit"]')
-            page.screenshot(path=f'{id}.png')
-            browser.close()
+        response = requests.get(url_name)
+        response.raise_for_status()
+        h1, title, description = get_content_of_page(response.text)
+        status_code = response.status_code
+
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO url_checks (
+                        url_id, status_code, h1, title, description, created_at
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    """,
+                    [
+                        id, status_code, h1, title, description,
+                        datetime.datetime.now()
+                    ]
+                )
+                conn.commit()
         flash("Check completed successfully", "alert alert-success")
     except Exception as e:
         logging.error(f"An error occurred during the check: {e}")
