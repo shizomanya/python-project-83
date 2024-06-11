@@ -5,7 +5,7 @@ import psycopg2
 import psycopg2.extras
 from flask import Flask, request, flash, redirect, render_template, url_for
 from dotenv import load_dotenv
-from requests.exceptions import HTTPError, ConnectionError
+from requests.exceptions import HTTPError, ConnectionError, Timeout
 from page_analyzer.validate import validate_url
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
@@ -59,9 +59,6 @@ def post_url():
                     flash("Page already exists", "alert alert-info")
                     return redirect(url_for('url_added', id=result.id))
 
-                response = requests.get(valid_url)
-                response.raise_for_status()
-
                 cur.execute(
                     """
                     INSERT INTO urls (name, created_at)
@@ -71,11 +68,8 @@ def post_url():
                 )
                 url_id = cur.fetchone().id
                 conn.commit()
-                flash("Page successfully added", "alert alert-success")
+                flash("URL successfully added", "alert alert-success")
                 return redirect(url_for('url_added', id=url_id))
-    except (HTTPError, ConnectionError) as e:
-        logging.error(f"Error accessing URL {valid_url}: {e}")
-        flash("Invalid URL or website is unreachable", "alert alert-danger")
     except Exception as e:
         logging.error(f"Database error: {e}")
         flash("An error occurred while adding the URL", "alert alert-danger")
@@ -168,7 +162,8 @@ def id_check(id):
                     return redirect(url_for('index'))
 
                 url_name = result.name
-                response = requests.get(url_name)
+
+                response = requests.get(url_name, timeout=5)
                 response.raise_for_status()
                 h1, title, description = get_content_of_page(response.text)
                 status_code = response.status_code
@@ -184,7 +179,7 @@ def id_check(id):
                 )
                 conn.commit()
                 flash("Check completed successfully", "alert alert-success")
-    except (HTTPError, ConnectionError) as e:
+    except (HTTPError, ConnectionError, Timeout) as e:
         logging.error(f"Error checking URL {id}: {e}")
         flash("Error checking the URL", "alert alert-danger")
     except Exception as e:
