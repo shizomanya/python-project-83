@@ -1,17 +1,34 @@
-install:
-	poetry install
-lint:
-	poetry run flake8 page_analyzer
-check:
-	poetry check
+all: start db-reset schema-load
+
+schema-load:
+	psql python-project-lvl3 < database.sql
+
+db-create:
+	createdb python-project-lvl3
+
+db-reset:
+	dropdb python-project-lvl3 || true
+	createdb python-project-lvl3
+
+connect:
+	psql -d python-project-lvl3
+
 dev:
 	poetry run flask --app page_analyzer:app --debug run
+
+install:
+	poetry install
+
+lint:
+	poetry run flake8 page_analyzer
+
+check: 
+	poetry check
+
 start:
 	poetry run gunicorn --workers=5 --bind=0.0.0.0:$(PORT) page_analyzer:app
-connect:
-	psql page_analyzer
-database: 
-	db-create schema-load
+
 build:
 	./build.sh
-PORT ?= 8000
+
+PORT ?= 8080

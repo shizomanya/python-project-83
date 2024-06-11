@@ -1,59 +1,64 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
-     <h1>Website: {{ url_name }}</h1>
+<div class="container">
+    {% if not url_name %}
+        <div class="alert alert-danger" role="alert">
+            Error: URL not found
+        </div>
+    {% else %}
+        <h1>Website: {{ url_name }}</h1>
+        
+        <div class="table-responsive mt-3">
+            <table class="table table-bordered table-hover" data-test="url">
+                <tbody>
+                    <tr>
+                        <td>ID</td>
+                        <td>{{ url_id }}</td>
+                    </tr>
+                    <tr>
+                        <td>Name</td>
+                        <td>{{ url_name }}</td>
+                    </tr>
+                    <tr>
+                        <td>Creation Date</td>
+                        <td>{{ url_created_at }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-    
-  <div class="table-responsive">
-    <table class="table table-bordered table-hover text-nowrap" data-test="url">
-      <tbody>
-        <tr>
-          <td>ID</td>
-          <td>{{ url_id }}</td>
-        </tr>
-        <tr>
-          <td>Name</td>
-          <td>{{ url_name }}</td>
-        </tr>
-        <tr>
-          <td>Creation Date</td>
-          <td>{{ url_created_at }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-    <h2 class="mt-5 mb-3">Checks</h2>
-    <form method="post" action="{{ url_for('id_check', id=url_id) }}">
-      <input type="submit" class="btn btn-primary" value="Run Check">
-    </form>
-    
-  <div>
-    <table class="table table-bordered table-hover mt-2" data-test="checks">
-      <tbody>
-    <tr>
-        <th>ID</th>
-        <th>Status Code</th>
-        <th>h1</th>
-        <th>title</th>
-        <th>description</th>
-        <th>Creation Date</th>
-    </tr>
-
-
-    {% for check in checks %}
-    <tr>
-        <td>{{ check.id }}</td>
-        <td>{{ check.status_code }}</td>
-        <td>{{ check.h1 }}</td>
-        <td>{{ check.title }}</td>
-        <td>{{ check.description }}</td>
-        <td>{{ check.created_at.date() }}</td>
-
-    </tr>
-    {% endfor %}
-
-      </tbody>
-    </table>
-  </div>
+        <h2 class="mt-5 mb-3">Checks</h2>
+        <form method="post" action="{{ url_for('id_check', id=url_id) }}">
+            <input type="submit" class="btn btn-primary" value="Run Check">
+        </form>
+        
+        <div class="table-responsive mt-3">
+            <table class="table table-bordered table-hover" data-test="checks">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Status Code</th>
+                        <th>h1</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Creation Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for check in checks %}
+                    <tr>
+                        <td>{{ check.id }}</td>
+                        <td>{{ check.status_code }}</td>
+                        <td>{{ check.h1 }}</td>
+                        <td>{{ check.title }}</td>
+                        <td>{{ check.description }}</td>
+                        <td>{{ check.created_at.date() }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

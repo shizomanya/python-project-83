@@ -1,5 +1,4 @@
 import os
-import sys
 import datetime
 import logging
 import requests
@@ -12,9 +11,6 @@ from requests.exceptions import HTTPError, ConnectionError
 from page_analyzer.validate import validate_url
 from urllib.parse import urlparse
 
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-)
 
 load_dotenv()
 
@@ -79,7 +75,9 @@ def post_url():
         return redirect(url_for('index'))
 
     with get_connection() as conn:
-        with conn.cursor() as cur:
+        with conn.cursor(
+            cursor_factory=psycopg2.extras.NamedTupleCursor
+        ) as cur:
             date = datetime.date.today()
             cur.execute(
                 """
@@ -87,7 +85,7 @@ def post_url():
                 VALUES (%s, %s) RETURNING id
                 """, [valid_url, date]
             )
-            url_id = cur.fetchone()[0]
+            url_id = cur.fetchone().id
             conn.commit()
         flash("Page successfully added", "alert alert-success")
         return redirect(url_for('url_added', id=url_id))
@@ -96,7 +94,9 @@ def post_url():
 @app.route('/urls/<int:id>')
 def url_added(id):
     with get_connection() as conn:
-        with conn.cursor() as cur:
+        with conn.cursor(
+            cursor_factory=psycopg2.extras.NamedTupleCursor
+        ) as cur:
             cur.execute(
                 """
                 SELECT name, created_at
@@ -180,7 +180,9 @@ def id_check(id):
         status_code = response.status_code
 
         with get_connection() as conn:
-            with conn.cursor() as cur:
+            with conn.cursor(
+                cursor_factory=psycopg2.extras.NamedTupleCursor
+            ) as cur:
                 cur.execute(
                     """
                     INSERT INTO url_checks (
