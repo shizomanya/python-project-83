@@ -1,21 +1,16 @@
 import os
-import datetime
 import logging
 import requests
 import psycopg2
 import psycopg2.extras
-import bs4
 from flask import Flask, request, flash, redirect, render_template, url_for
 from dotenv import load_dotenv
 from requests.exceptions import HTTPError, ConnectionError
 from page_analyzer.validate import validate_url
 from urllib.parse import urlparse
-
+from bs4 import BeautifulSoup
 
 load_dotenv()
-
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
@@ -27,7 +22,7 @@ def get_connection():
 
 
 def get_content_of_page(page_data):
-    soup = bs4.BeautifulSoup(page_data, 'html.parser')
+    soup = BeautifulSoup(page_data, 'html.parser')
     h1 = soup.find('h1').get_text() if soup.find('h1') else ''
     title = soup.find('title').get_text() if soup.find('title') else ''
     meta_tag = soup.find('meta', {"name": "description"})
@@ -51,158 +46,150 @@ def post_url():
         flash("Invalid URL", "alert alert-danger")
         return redirect(url_for('index'))
 
-    # Проверка наличия URL в базе данных
-    with get_connection() as conn:
-        with conn.cursor(
-            cursor_factory=psycopg2.extras.NamedTupleCursor
-        ) as cur:
-            cur.execute("SELECT id FROM urls WHERE name = %s", [valid_url])
-            result = cur.fetchone()
-            if result:
-                flash("Page already exists", "alert alert-info")
-                return redirect(url_for('url_added', id=result.id))
-
-    # Проверка валидности URL
     try:
-        response = requests.get(valid_url)
-        response.raise_for_status()
-        if not response.text:
-            flash("Empty response from the URL", "alert alert-danger")
-            return redirect(url_for('index'))
+        with get_connection() as conn:
+            with conn.cursor(
+                cursor_factory=psycopg2.extras.NamedTupleCursor
+            ) as cur:
+                cur.execute(
+                    "SELECT id FROM urls WHERE name = %s", [valid_url]
+                )
+                result = cur.fetchone()
+                if result:
+                    flash("Page already exists", "alert alert-info")
+                    return redirect(url_for('url_added', id=result.id))
+
+                response = requests.get(valid_url)
+                response.raise_for_status()
+
+                cur.execute(
+                    """
+                    INSERT INTO urls (name, created_at)
+                    VALUES (%s, CURRENT_DATE) RETURNING id
+                    """,
+                    [valid_url]
+                )
+                url_id = cur.fetchone().id
+                conn.commit()
+                flash("Page successfully added", "alert alert-success")
+                return redirect(url_for('url_added', id=url_id))
     except (HTTPError, ConnectionError) as e:
         logging.error(f"Error accessing URL {valid_url}: {e}")
         flash("Invalid URL or website is unreachable", "alert alert-danger")
-        return redirect(url_for('index'))
+    except Exception as e:
+        logging.error(f"Database error: {e}")
+        flash("An error occurred while adding the URL", "alert alert-danger")
 
-    with get_connection() as conn:
-        with conn.cursor(
-            cursor_factory=psycopg2.extras.NamedTupleCursor
-        ) as cur:
-            date = datetime.date.today()
-            cur.execute(
-                """
-                INSERT INTO urls (name, created_at)
-                VALUES (%s, %s) RETURNING id
-                """, [valid_url, date]
-            )
-            url_id = cur.fetchone().id
-            conn.commit()
-        flash("Page successfully added", "alert alert-success")
-        return redirect(url_for('url_added', id=url_id))
+    return redirect(url_for('index'))
 
 
 @app.route('/urls/<int:id>')
 def url_added(id):
-    with get_connection() as conn:
-        with conn.cursor(
-            cursor_factory=psycopg2.extras.NamedTupleCursor
-        ) as cur:
-            cur.execute(
-                """
-                SELECT name, created_at
-                FROM urls
-                WHERE id = %s
-                """, [id]
-            )
-            row = cur.fetchone()
-            url_name = row.name if row else None
-            url_created_at = row.created_at if row else None
+    try:
+        with get_connection() as conn:
+            with conn.cursor(
+                cursor_factory=psycopg2.extras.NamedTupleCursor
+            ) as cur:
+                cur.execute(
+                    "SELECT name, created_at FROM urls WHERE id = %s", [id]
+                )
+                row = cur.fetchone()
+                if row:
+                    url_name, url_created_at = row.name, row.created_at
+                else:
+                    flash("URL not found", "alert alert-danger")
+                    return redirect(url_for('index'))
 
-    with get_connection() as conn:
-        with conn.cursor(
-            cursor_factory=psycopg2.extras.NamedTupleCursor
-        ) as cur:
-            cur.execute(
-                """
-                SELECT id, created_at, status_code, h1, title, description
-                FROM url_checks
-                WHERE url_id = %s
-                ORDER BY id DESC
-                """, [id]
+                cur.execute(
+                    """
+                    SELECT id, created_at, status_code, h1, title, description
+                    FROM url_checks
+                    WHERE url_id = %s
+                    ORDER BY id DESC
+                    """,
+                    [id]
+                )
+                checks = cur.fetchall()
+                return render_template(
+                    'url.html',
+                    url_name=url_name,
+                    url_id=id,
+                    url_created_at=url_created_at,
+                    checks=checks
+                )
+    except Exception as e:
+        logging.error(f"Database error: {e}")
+        flash(
+            "An error occurred while fetching URL data",
+            "alert alert-danger"
             )
-            rows = cur.fetchall()
-    return render_template(
-        'url.html',
-        url_name=url_name,
-        url_id=id,
-        url_created_at=url_created_at,
-        checks=rows
-    )
+
+    return redirect(url_for('index'))
 
 
 @app.route('/urls', methods=['GET'])
 def urls_get():
-    with get_connection() as conn:
-        with conn.cursor(
-            cursor_factory=psycopg2.extras.NamedTupleCursor
-        ) as cur:
-            cur.execute(
-                """
-                SELECT
-                    DISTINCT ON (urls.id)
-                        urls.id,
-                        urls.name,
-                        MAX(url_checks.created_at) AS max,
-                        url_checks.status_code
-                FROM urls
-                LEFT JOIN url_checks ON urls.id = url_checks.url_id
-                GROUP BY urls.id, url_checks.status_code
-                ORDER BY urls.id DESC
-                """
-            )
-            rows = cur.fetchall()
-    return render_template(
-        'urls.html',
-        urls=rows
-    )
-
-
-@app.route('/urls/<int:id>/checks', methods=['POST'])
-def id_check(id):
-    with get_connection() as conn:
-        with conn.cursor(
-            cursor_factory=psycopg2.extras.NamedTupleCursor
-        ) as cur:
-            cur.execute(
-                """
-                SELECT name
-                FROM urls
-                WHERE id = %s
-                """, [id]
-            )
-            result = cur.fetchone()
-
-    url_name = result.name if result else None
     try:
-        response = requests.get(url_name)
-        response.raise_for_status()
-        h1, title, description = get_content_of_page(response.text)
-        status_code = response.status_code
-
         with get_connection() as conn:
             with conn.cursor(
                 cursor_factory=psycopg2.extras.NamedTupleCursor
             ) as cur:
                 cur.execute(
                     """
+                    SELECT DISTINCT ON (urls.id) urls.id, urls.name,
+                    MAX(url_checks.created_at) AS last_check,
+                    url_checks.status_code
+                    FROM urls
+                    LEFT JOIN url_checks ON urls.id = url_checks.url_id
+                    GROUP BY urls.id, url_checks.status_code
+                    ORDER BY urls.id DESC
+                    """
+                )
+                urls = cur.fetchall()
+                return render_template('urls.html', urls=urls)
+    except Exception as e:
+        logging.error(f"Database error: {e}")
+        flash("An error occurred while fetching URLs", "alert alert-danger")
+
+    return redirect(url_for('index'))
+
+
+@app.route('/urls/<int:id>/checks', methods=['POST'])
+def id_check(id):
+    try:
+        with get_connection() as conn:
+            with conn.cursor(
+                cursor_factory=psycopg2.extras.NamedTupleCursor
+            ) as cur:
+                cur.execute("SELECT name FROM urls WHERE id = %s", [id])
+                result = cur.fetchone()
+                if not result:
+                    flash("URL not found", "alert alert-danger")
+                    return redirect(url_for('index'))
+
+                url_name = result.name
+                response = requests.get(url_name)
+                response.raise_for_status()
+                h1, title, description = get_content_of_page(response.text)
+                status_code = response.status_code
+
+                cur.execute(
+                    """
                     INSERT INTO url_checks (
                         url_id, status_code, h1, title, description, created_at
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                     """,
-                    [
-                        id, status_code, h1, title, description,
-                        datetime.datetime.now()
-                    ]
+                    [id, status_code, h1, title, description]
                 )
                 conn.commit()
-        flash("Check completed successfully", "alert alert-success")
+                flash("Check completed successfully", "alert alert-success")
+    except (HTTPError, ConnectionError) as e:
+        logging.error(f"Error checking URL {id}: {e}")
+        flash("Error checking the URL", "alert alert-danger")
     except Exception as e:
-        logging.error(f"An error occurred during the check: {e}")
-        flash(
-            f"An error occurred during the check: {str(e)}",
-            "alert alert-danger"
-        )
+        logging.error(f"Database error: {e}")
+        flash("An error occurred while checking the URL", "alert alert-danger")
 
     return redirect(url_for('url_added', id=id))
 
@@ -215,3 +202,7 @@ def not_found_error(error):
 @app.errorhandler(500)
 def internal_error(error):
     return render_template('500.html'), 500
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
