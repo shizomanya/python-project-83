@@ -5,29 +5,16 @@ on: push
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
-
-      - name: Install dependencies
+      - name: install dependencies
         run: |
           pip install poetry flake8 pytest
           pip3 install flask
           make install
-
-      - name: Build Docker images
-        run: docker-compose -f path/to/your/docker-compose.yml build
-
-      - name: Start Docker containers
-        run: docker-compose -f path/to/your/docker-compose.yml up -d
-
       - name: Run linter
         run: make lint
-
-      - name: Stop Docker containers
-        run: docker-compose -f path/to/your/docker-compose.yml down
