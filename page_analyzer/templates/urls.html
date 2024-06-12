@@ -23,7 +23,7 @@
                             {{ url.name }}
                         </a>
                     </td>
-                    <td>{{ url.max.strftime('%Y-%m-%d %H:%M:%S') if url.max else '' }}</td>
+                    <td>{{ url.max.date() if url.max else '' }}</td>
                     <td>{{ url.status_code or '' }}</td>
                 </tr>
                 {% endfor %}
