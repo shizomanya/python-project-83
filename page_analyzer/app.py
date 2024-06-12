@@ -3,12 +3,12 @@ import logging
 import requests
 import psycopg2
 import psycopg2.extras
-from flask import Flask, request, flash, redirect, render_template, url_for
-from dotenv import load_dotenv
-from requests.exceptions import HTTPError, ConnectionError, Timeout
-from page_analyzer.validate import validate_url
-from urllib.parse import urlparse
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
+from dotenv import load_dotenv
+from page_analyzer.validate import validate_url
+from flask import Flask, request, flash, redirect, render_template, url_for
+from requests.exceptions import HTTPError, ConnectionError, Timeout
 
 load_dotenv()
 
