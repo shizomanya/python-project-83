@@ -14,11 +14,11 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL_RENDER = os.getenv('DATABASE_URL_RENDER')
 
 
 def get_connection():
-    return psycopg2.connect(DATABASE_URL)
+    return psycopg2.connect(DATABASE_URL_RENDER)
 
 
 def get_content_of_page(page_data):

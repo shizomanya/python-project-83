@@ -14,7 +14,7 @@ connect:
 	psql -d python-project-lvl3
 
 dev:
-	poetry run flask --app page_analyzer:app run
+	poetry run flask --app page_analyzer:app --debug run --port $(PORT)
 
 install:
 	poetry install
@@ -25,7 +25,7 @@ lint:
 check: 
 	poetry check
 
-sPORT ?= 8000
+PORT ?= 8000
 start:
 	poetry run gunicorn -w 5 -b 0.0.0.0:$(PORT) page_analyzer:app
 
