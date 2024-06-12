@@ -1,4 +1,4 @@
-[tool.poetry]
+ [tool.poetry]
 name = "hexlet-code"
 version = "0.1.0"
 description = "Web application for checking a web page."
@@ -38,3 +38,4 @@ flake8 = "^7.0.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
