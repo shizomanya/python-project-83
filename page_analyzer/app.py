@@ -131,7 +131,8 @@ def urls_get():
                 cur.execute(
                     """
                     SELECT DISTINCT ON (urls.id) urls.id, urls.name,
-                    COALESCE(MAX(url_checks.created_at), urls.last_check) AS last_check,
+                    COALESCE(MAX(url_checks.created_at),
+                    urls.last_check) AS last_check,
                     url_checks.status_code
                     FROM urls
                     LEFT JOIN url_checks ON urls.id = url_checks.url_id
@@ -146,7 +147,6 @@ def urls_get():
         flash("An error occurred while fetching URLs", "alert alert-danger")
 
     return redirect(url_for('index'))
-
 
 
 @app.route('/urls/<int:id>/checks', methods=['POST'])
