@@ -1,13 +1,17 @@
 import validators
+from urllib.parse import urlparse
+
+MAX_URL_LEN = 255
+
+
+def check_url_len(url):
+    return len(url) > MAX_URL_LEN
 
 
 def validate_url(url):
-    errors = []
-    if len(url) > 255:
-        errors.append('URL exceeds 255 characters')
-    elif not url:
-        errors.append("URL is required")
-    elif not validators.url(url):
-        errors.append('Invalid URL')
+    return not validators.url(url)
 
-    return errors
+
+def normalize_url(url):
+    url_parts = urlparse(url)
+    return f"{url_parts.scheme}://{url_parts.netloc}"

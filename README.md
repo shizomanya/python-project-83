@@ -10,6 +10,33 @@ Analyze specified pages for SEO suitability.
 [![Python CI](https://github.com/shizomanya/python-project-lvl3/actions/workflows/ci.yml/badge.svg)](https://github.com/shizomanya/python-project-lvl3/actions/workflows/ci.yml)
 <a href="https://codeclimate.com/github/shizomanya/python-project-lvl3/maintainability"><img src="https://api.codeclimate.com/v1/badges/fc423b38c73510c221a2/maintainability" /></a>
 
+<p>
+<a href="#about">About</a> •
+<a href="#installation">Installation</a> •
+<a href="#usage">Usage</a> 
+</p>
+</div>
+
+<details><summary style="font-size:larger;"><b>Table of Contents</b></summary>
+
+- [PAGE ANALYZER](#page-analyzer)
+  - [About:](#about)
+  - [Requirements:](#requirements)
+    - [Makefile commands:](#makefile-commands)
+  - [Installation:](#installation)
+      - [Python](#python)
+      - [Poetry](#poetry)
+      - [PostgreSQL](#postgresql)
+    - [Application](#application)
+  - [Usage](#usage)
+  - [How to use this App:](#how-to-use-this-app)
+
+</details>
+
+# PAGE ANALYZER
+## About:
+[Page Analyzer](https://python-project-lvl3-morl.onrender.com) is a web application that checks web pages for SEO suitability. By running the check, you can get basic information from the main page of the site.
+
 ## Requirements:
 App developed with:
 * [Python](https://www.python.org/)
@@ -95,4 +122,4 @@ _The dev server will be at http://127.0.0.1:5000._
 2. Enter the address of the web page you want to check.
 3. Run the analyzer test.
 4. You can get information from the main page of the site by clicking on the “Run check” button. The result with the response code, h1 tag, title, description and creation date will appear if the test is successful.
-5. All checks can be viewed in the “websites” tab.
+5. All checks can be viewed in the “websites” tab (You can see all added URLs on the `/urls` page.)
