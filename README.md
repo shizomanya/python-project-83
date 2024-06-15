@@ -79,7 +79,7 @@ The project uses the Poetry dependency manager. To install Poetry use its [offic
 
 As database the PostgreSQL database system is being used. You need to install it first. You can download the ready-to-use package from [official website](https://www.postgresql.org/download/) or use Homebrew:
 ```shell
->> brew install postgresql
+>> pip install postgresql
 ```
 ### Application
 
