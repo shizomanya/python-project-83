@@ -161,7 +161,7 @@ def id_check(id):
     url = url_data['name']
     response = try_get_url(url)
     if response:
-        flash("Проверка успешно завершена", "alert alert-success")
+        flash("Страница успешно проверена", "alert alert-success")
         check_created_at = date.today()
         h1, title, description = get_url_seo_data(response)
         status_code = get_status_code(response)
@@ -170,7 +170,7 @@ def id_check(id):
                 id, status_code, h1, title, description, check_created_at
             )
     else:
-        flash("Ошибка при проверке URL", "alert alert-danger")
+        flash("Произошла ошибка при проверке", "alert alert-danger")
     return redirect(url_for('url_added', id=id))
 
 

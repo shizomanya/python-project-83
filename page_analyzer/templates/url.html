@@ -4,10 +4,10 @@
 <div class="container">
     {% if not url_name %}
         <div class="alert alert-danger" role="alert">
-            Error: URL not found
+            Error: URL-адрес не найден
         </div>
     {% else %}
-        <h1>Website: {{ url_name }}</h1>
+        <h1>Сайт: {{ url_name }}</h1>
         
         <div class="table-responsive mt-3">
             <table class="table table-bordered table-hover" data-test="url">
@@ -17,20 +17,20 @@
                         <td>{{ url_id }}</td>
                     </tr>
                     <tr>
-                        <td>Name</td>
+                        <td>Имя</td>
                         <td>{{ url_name }}</td>
                     </tr>
                     <tr>
-                        <td>Creation Date</td>
+                        <td>Дата создания</td>
                         <td style="white-space: nowrap;">{{ url_created_at }}</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <h2 class="mt-5 mb-3">Checks</h2>
+        <h2 class="mt-5 mb-3">Проверки</h2>
         <form method="post" action="{{ url_for('id_check', id=url_id) }}">
-            <input type="submit" class="btn btn-primary" value="Run Check">
+            <input type="submit" class="btn btn-primary" value="Запустить проверку">
         </form>
         
         <div class="table-responsive mt-3">
@@ -38,11 +38,11 @@
                 <thead>
                     <tr>
                         <th style="text-align: center;">ID</th>
-                        <th style="text-align: center;">Status Code</th>
+                        <th style="text-align: center;">Код ответа</th>
                         <th style="text-align: center;">h1</th>
                         <th style="text-align: center;">Title</th>
                         <th style="text-align: center;">Description</th>
-                        <th style="text-align: center;">Creation Date</th>
+                        <th style="text-align: center;">Дата создания</th>
                     </tr>
                 </thead>
                 <tbody>
