@@ -23,7 +23,7 @@ def connect_db(func):
             conn = connect(DATABASE_URL)
             cur = conn.cursor(cursor_factory=DictCursor)
         except OperationalError:
-            print("Unable to establish connection to database")
+            print("Не удалось установить соединение с базой данных")
             return None
         result = func(cur, *args, **kwargs)
         conn.commit()
@@ -46,7 +46,9 @@ def get_url_data(cur, id):
         "FROM urls WHERE id = %s",
         (id,)
     )
-    return cur.fetchone()
+    url_data = cur.fetchone()
+    return url_data
+
 
 @connect_db
 def get_url_checks(cur, url_id):
@@ -111,15 +113,10 @@ def urls_get():
 @app.route('/urls', methods=['POST'])
 def post_url():
     input_url = request.form.get('url')
-    if not input_url:
-        flash('URL не может быть пустым', 'alert alert-danger')
-        return render_template('index.html'), 422
-
     if check_url_len(input_url):
         flash('URL превышает 255 символов', 'alert alert-danger')
         return render_template('index.html'), 422
-
-    if not validate_url(input_url):
+    if validate_url(input_url):
         flash('Некорректный URL', 'alert alert-danger')
         return render_template('index.html'), 422
 
@@ -140,7 +137,7 @@ def url_added(id):
     messages = get_flashed_messages(with_categories=True)
     url_data = get_url_data(id)
     if not url_data:
-        flash("URL не найден", "alert alert-danger")
+        flash('URL не найден', "alert alert-danger")
         return redirect(url_for('index'))
 
     checks = get_url_checks(id)
@@ -153,13 +150,13 @@ def url_added(id):
         checks=checks
     )
 
+
 @app.route('/urls/<int:id>/checks', methods=['POST'])
 def id_check(id):
     url_data = get_url_data(id)
     if not url_data:
-        flash("URL не найден", "alert alert-danger")
+        flash('URL не найден', "alert alert-danger")
         return redirect(url_for('index'))
-
 
     url = url_data['name']
     response = try_get_url(url)
