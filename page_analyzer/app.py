@@ -46,9 +46,7 @@ def get_url_data(cur, id):
         "FROM urls WHERE id = %s",
         (id,)
     )
-    url_data = cur.fetchone()
-    return url_data
-
+    return cur.fetchone()
 
 @connect_db
 def get_url_checks(cur, url_id):
@@ -113,21 +111,26 @@ def urls_get():
 @app.route('/urls', methods=['POST'])
 def post_url():
     input_url = request.form.get('url')
-    if check_url_len(input_url):
-        flash('URL exceeds 255 characters', 'alert alert-danger')
+    if not input_url:
+        flash('URL не может быть пустым', 'alert alert-danger')
         return render_template('index.html'), 422
-    if validate_url(input_url):
-        flash('Invalid URL', 'alert alert-danger')
+
+    if check_url_len(input_url):
+        flash('URL превышает 255 символов', 'alert alert-danger')
+        return render_template('index.html'), 422
+
+    if not validate_url(input_url):
+        flash('Некорректный URL', 'alert alert-danger')
         return render_template('index.html'), 422
 
     url = normalize_url(input_url)
     url_data = get_url_by_name(url)
     if url_data:
-        flash('Page already exists', "alert alert-info")
+        flash('Страница уже существует', "alert alert-info")
     else:
         created_at = date.today()
         url_data = add_url(url, created_at)
-        flash('Page successfully added', 'alert alert-success')
+        flash('Страница успешно добавлена', 'alert alert-success')
     url_id = url_data['id']
     return redirect(url_for('url_added', id=url_id))
 
@@ -137,7 +140,7 @@ def url_added(id):
     messages = get_flashed_messages(with_categories=True)
     url_data = get_url_data(id)
     if not url_data:
-        flash("URL not found", "alert alert-danger")
+        flash("URL не найден", "alert alert-danger")
         return redirect(url_for('index'))
 
     checks = get_url_checks(id)
@@ -150,18 +153,18 @@ def url_added(id):
         checks=checks
     )
 
-
 @app.route('/urls/<int:id>/checks', methods=['POST'])
 def id_check(id):
     url_data = get_url_data(id)
     if not url_data:
-        flash("URL not found", "alert alert-danger")
+        flash("URL не найден", "alert alert-danger")
         return redirect(url_for('index'))
+
 
     url = url_data['name']
     response = try_get_url(url)
     if response:
-        flash("Check completed successfully", "alert alert-success")
+        flash("Проверка успешно завершена", "alert alert-success")
         check_created_at = date.today()
         h1, title, description = get_url_seo_data(response)
         status_code = get_status_code(response)
@@ -170,7 +173,7 @@ def id_check(id):
                 id, status_code, h1, title, description, check_created_at
             )
     else:
-        flash("Error checking the URL", "alert alert-danger")
+        flash("Ошибка при проверке URL", "alert alert-danger")
     return redirect(url_for('url_added', id=id))
 
 
