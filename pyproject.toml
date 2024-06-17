@@ -27,14 +27,12 @@ requests = "^2.32.2"
 beautifulsoup4 = "^4.12.3"
 lxml = "^5.2.2"
 validators = "^0.28.3"
-playwright = "1.42.0"
-flask-migrate = "^4.0.7"
-sqlalchemy = "^2.0.30"
 
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.0.0"
 requests-mock = "^1.12.1"
+playwright = "1.42.0"
 
 [build-system]
 requires = ["poetry-core"]

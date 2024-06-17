@@ -11,22 +11,17 @@ def try_get_url(url):
         return response
     except requests.exceptions.RequestException as error:
         logging.exception(error)
+        return None
 
 
 def get_status_code(response):
     return response.status_code
 
 
-def get_url_seo_data(response):
-    soup = BeautifulSoup(response.text, 'html.parser')
-    if soup.h1:
-        h1 = soup.h1.string
-    else:
-        h1 = ''
-    if soup.title:
-        title = soup.title.string
-    else:
-        title = ''
+def get_url_seo_data(response_text):
+    soup = BeautifulSoup(response_text, 'html.parser')
+    h1 = soup.h1.string if soup.h1 else ''
+    title = soup.title.string if soup.title else ''
     description_tag = soup.find('meta', attrs={"name": "description"})
     description = ''
     if description_tag:

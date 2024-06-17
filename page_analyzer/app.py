@@ -2,7 +2,7 @@ import os
 from datetime import date
 from dotenv import load_dotenv
 from psycopg2.extras import DictCursor
-from psycopg2 import connect, OperationalError
+from psycopg2 import connect
 from flask import (
     Flask, request, render_template, redirect, url_for, flash,
     get_flashed_messages
@@ -19,17 +19,12 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 def connect_db(func):
     def wrapper(*args, **kwargs):
-        try:
-            conn = connect(DATABASE_URL)
-            cur = conn.cursor(cursor_factory=DictCursor)
-        except OperationalError:
-            print("Не удалось установить соединение с базой данных")
-            return None
-        result = func(cur, *args, **kwargs)
-        conn.commit()
-        conn.close()
-        cur.close()
-        return result
+        with connect(DATABASE_URL) as conn:
+            with conn.cursor(cursor_factory=DictCursor) as cur:
+                result = func(cur, *args, **kwargs)
+                if func.__name__.startswith("add_"):
+                    conn.commit()
+                return result
     return wrapper
 
 
@@ -46,8 +41,7 @@ def get_url_data(cur, id):
         "FROM urls WHERE id = %s",
         (id,)
     )
-    url_data = cur.fetchone()
-    return url_data
+    return cur.fetchone()
 
 
 @connect_db
@@ -78,12 +72,6 @@ def add_url(cur, url, created_at):
 
 @connect_db
 def add_url_check(cur, id, status_code, h1, title, description, created_at):
-    url_data = get_url_data(id)
-    if url_data is None:
-        return None
-
-    h1 = h1 if h1 is not None else ''
-
     cur.execute("""
         INSERT INTO url_checks (url_id, status_code, h1, title,
                         description, created_at)
@@ -110,14 +98,22 @@ def urls_get():
     return render_template('urls.html', urls=urls)
 
 
+def validate_input_url(input_url):
+    errors = []
+    if check_url_len(input_url):
+        errors.append('URL превышает 255 символов')
+    if not validate_url(input_url):
+        errors.append('Некорректный URL')
+    return errors
+
+
 @app.route('/urls', methods=['POST'])
 def post_url():
     input_url = request.form.get('url')
-    if check_url_len(input_url):
-        flash('URL превышает 255 символов', 'alert alert-danger')
-        return render_template('index.html'), 422
-    if validate_url(input_url):
-        flash('Некорректный URL', 'alert alert-danger')
+    errors = validate_input_url(input_url)
+    if errors:
+        for error in errors:
+            flash(error, 'alert alert-danger')
         return render_template('index.html'), 422
 
     url = normalize_url(input_url)
@@ -160,17 +156,20 @@ def id_check(id):
 
     url = url_data['name']
     response = try_get_url(url)
-    if response:
-        flash("Страница успешно проверена", "alert alert-success")
-        check_created_at = date.today()
-        h1, title, description = get_url_seo_data(response)
-        status_code = get_status_code(response)
-        if status_code == 200:
-            add_url_check(
-                id, status_code, h1, title, description, check_created_at
-            )
-    else:
+    if not response:
         flash("Произошла ошибка при проверке", "alert alert-danger")
+        return redirect(url_for('url_added', id=id))
+
+    status_code = get_status_code(response)
+    response.raise_for_status()
+
+    check_created_at = date.today()
+    h1, title, description = get_url_seo_data(response.text)
+    add_url_check(
+        id, status_code, h1, title, description, check_created_at
+    )
+
+    flash("Страница успешно проверена", "alert alert-success")
     return redirect(url_for('url_added', id=id))
 
 

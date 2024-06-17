@@ -9,7 +9,7 @@ def check_url_len(url):
 
 
 def validate_url(url):
-    return not validators.url(url)
+    return validators.url(url)
 
 
 def normalize_url(url):
