@@ -89,41 +89,41 @@ def add_url_check(cur, id, status_code, h1, title, description, created_at):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
 @app.route('/urls', methods=['GET'])
 def urls_get():
     urls = get_all_urls()
-    return render_template('urls.html', urls=urls)
+    return render_template("urls.html", urls=urls)
 
 
 def validate_input_url(input_url):
     errors = []
     if check_url_len(input_url):
-        errors.append('URL превышает 255 символов')
+        errors.append("URL превышает 255 символов")
     if not validate_url(input_url):
-        errors.append('Некорректный URL')
+        errors.append("Некорректный URL")
     return errors
 
 
 @app.route('/urls', methods=['POST'])
 def post_url():
-    input_url = request.form.get('url')
+    input_url = request.form.get("url")
     errors = validate_input_url(input_url)
     if errors:
         for error in errors:
-            flash(error, 'alert alert-danger')
-        return render_template('index.html'), 422
+            flash(error, "alert alert-danger")
+        return render_template("index.html"), 422
 
     url = normalize_url(input_url)
     url_data = get_url_by_name(url)
     if url_data:
-        flash('Страница уже существует', "alert alert-info")
+        flash("Страница уже существует", "alert alert-info")
     else:
         created_at = date.today()
         url_data = add_url(url, created_at)
-        flash('Страница успешно добавлена', 'alert alert-success')
+        flash("Страница успешно добавлена", "alert alert-success")
     url_id = url_data['id']
     return redirect(url_for('url_added', id=url_id))
 
@@ -151,7 +151,7 @@ def url_added(id):
 def id_check(id):
     url_data = get_url_data(id)
     if not url_data:
-        flash('URL не найден', "alert alert-danger")
+        flash("URL не найден", "alert alert-danger")
         return redirect(url_for('index'))
 
     url = url_data['name']
@@ -175,12 +175,12 @@ def id_check(id):
 
 @app.errorhandler(404)
 def not_found_error(error):
-    return render_template('404.html'), 404
+    return render_template("404.html"), 404
 
 
 @app.errorhandler(500)
 def internal_error(error):
-    return render_template('500.html'), 500
+    return render_template("500.html"), 500
 
 
 if __name__ == '__main__':
